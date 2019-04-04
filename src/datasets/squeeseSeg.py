@@ -11,13 +11,13 @@ import os
 import sys
 
 # x, y, z, intensity, distance for Normalization
-INPUT_MEAN = np.array([[[10.88, 0.23, -1.04, 0.21, 12.12]]])
-INPUT_STD = np.array([[[11.47, 6.91, 0.86, 0.16, 12.32]]])
+INPUT_MEAN = np.array([[[10.88, 0.23, -1.04]]])
+INPUT_STD = np.array([[[11.47, 6.91, 0.86]]])
 
 # クラスの出現度に応じてlossに重さを設定
 CLS_LOSS_WEIGHT = np.array([1/15.0, 1.0, 10.0, 10.0])
 
-class KittiDataset(Dataset):
+class SqueezeSegDataset(Dataset):
     def __init__(self, csv_file, root_dir, data_augmentation=True, random_flipping=True, transform=None):
         self.lidar_2d_csv = pd.read_csv(csv_file)
         self.root_dir = root_dir
@@ -39,7 +39,7 @@ class KittiDataset(Dataset):
                     lidar_data = lidar_data[:, ::-1, :]
                     lidar_data[:, :, 1] *= -1
 
-        lidar_inputs =  lidar_data[:, :, :5] # x, y, z, intensity, depth(range)
+        lidar_inputs =  lidar_data[:, :, :3] # x, y, z, intensity, depth(range)
 
         lidar_mask = np.reshape(
             (lidar_inputs[:, :, 4] > 0) * 1,
@@ -59,4 +59,4 @@ class KittiDataset(Dataset):
             lidar_inputs = self.transform(lidar_inputs)
             lidar_mask = self.transform(lidar_mask)
 
-        return (lidar_inputs.float(), lidar_mask.float(), torch.from_numpy(lidar_label.copy()).long(), torch.from_numpy(weight.copy()).float())
+        return lidar_inputs.float().view(3, -1), lidar_mask.float().view(1, -1), torch.from_numpy(lidar_label.copy()).long().view(-1), torch.from_numpy(weight.copy()).float().view(-1)
