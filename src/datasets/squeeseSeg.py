@@ -11,11 +11,8 @@ import os
 import sys
 
 # x, y, z, intensity, distance for Normalization
-INPUT_MEAN = np.array([[[10.88, 0.23, -1.04]]])
-INPUT_STD = np.array([[[11.47, 6.91, 0.86]]])
-
-# クラスの出現度に応じてlossに重さを設定
-CLS_LOSS_WEIGHT = np.array([1/15.0, 1.0, 10.0, 10.0])
+INPUT_MEAN = np.array([[[10.88, 0.23, -1.04, 0.21]]])
+INPUT_STD = np.array([[[11.47, 6.91, 0.86, 0.16]]])
 
 class SqueezeSegDataset(Dataset):
     def __init__(self, csv_file, root_dir, data_augmentation=True, random_flipping=True, transform=None):
@@ -39,24 +36,14 @@ class SqueezeSegDataset(Dataset):
                     lidar_data = lidar_data[:, ::-1, :]
                     lidar_data[:, :, 1] *= -1
 
-        lidar_inputs =  lidar_data[:, :, :3] # x, y, z, intensity, depth(range)
-
-        lidar_mask = np.reshape(
-            (lidar_inputs[:, :, 4] > 0) * 1,
-            [64, 512, 1]
-        )
+        lidar_inputs =  lidar_data[:, :, :4] # x, y, z
 
         # Normalize Inputs
         lidar_inputs = (lidar_inputs - INPUT_MEAN) / INPUT_STD
 
         lidar_label = lidar_data[:, :, 5]
 
-        weight = np.zeros(lidar_label.shape)
-        for l in range(len(CLS_LOSS_WEIGHT)):
-            weight[lidar_label == l] = CLS_LOSS_WEIGHT[int(l)]
-
         if self.transform:
             lidar_inputs = self.transform(lidar_inputs)
-            lidar_mask = self.transform(lidar_mask)
 
-        return lidar_inputs.float().view(3, -1), lidar_mask.float().view(1, -1), torch.from_numpy(lidar_label.copy()).long().view(-1), torch.from_numpy(weight.copy()).float().view(-1)
+        return lidar_inputs.float().view(4, -1), torch.from_numpy(lidar_label.copy()).long().view(-1)

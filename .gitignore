@@ -1,0 +1,6 @@
+models/
+scripts/
+src/*/__pycache__/
+
+runs/
+all_scalars.json

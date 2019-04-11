@@ -19,7 +19,7 @@ def visualize_seg(label_map, one_hot=False):
     if one_hot:
         label_map = np.argmax(label_map, axis=-1)
 
-    out = torch.zeros([label_map.size()[0], label_map.size()[1], label_map.size()[2], 3], dtype=torch.float64)
+    out = torch.zeros([label_map.size()[0], label_map.size()[1], 3], dtype=torch.float64)
 
     for l in range(1, 4):
         out[label_map==l, :] = torch.from_numpy(CLS_COLOR_MAP[l])
@@ -87,34 +87,3 @@ def load_checkpoint(model_dir, epoch, model):
     checkpoint = torch.load(load_path)
     model.load_state_dict(checkpoint)
     print(f"Checkpoint loaded to {load_path}")
-
-"""
-def load_pretrained(load_path, model):
-
-    trained_state_dict = torch.load(load_path)
-    own_state_dict = model.state_dict()
-
-    own_key = list(own_state_dict.keys())
-    trained_key = list(trained_state_dict.keys())
-
-    """print('----------------------------------')
-    print('trained')
-    print(trained_state_dict[trained_key[1]])
-    print('----------------------------------')"""
-
-    dic = {}
-    for i in range(len(trained_key) - 2):
-        dic[own_key[i]] = trained_key[i]
-
-    for name, param in own_state_dict.items():
-        key = name
-        if key in dic and param.size() == trained_state_dict[dic[key]].size():
-            input_param = trained_state_dict[dic[key]]
-
-            if isinstance(input_param, Parameter):
-                input_param = input_param.data
-            try:
-                param.copy_(input_param)
-            except Exception:
-                print(f'While copying the parameter named {key}, whose dimensions in the model are {param.size()}and whose dimensions in the checkpoint are {input_param.size()}.')
-"""
