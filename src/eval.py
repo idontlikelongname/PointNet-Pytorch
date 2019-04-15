@@ -43,7 +43,7 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(e) for e in args.gpu_ids)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def test(model, val_loader):
+def test(model, test_loader):
     model.eval()
 
     total_tp = np.zeros(len(args.cls))
@@ -51,7 +51,7 @@ def test(model, val_loader):
     total_fn = np.zeros(len(args.cls))
 
     with torch.no_grad():
-        for batch_idx, datas in enumerate(val_loader, 1):
+        for batch_idx, datas in enumerate(test_loader, 1):
             inputs, targets = datas
             inputs, targets = inputs.to(device), targets.to(device)
 
@@ -59,7 +59,7 @@ def test(model, val_loader):
 
             _, predicted = torch.max(outputs.data, 2)
 
-            if batch_idx == len(train_loader):
+            if batch_idx == len(test_loader):
                 input_img = img_normalize(inputs[0][3].view(64, 512))
                 Image.fromarray(np.uint8(input_img)).save('input.png')
 
@@ -107,15 +107,15 @@ if __name__ == '__main__':
     if args.network == 'PointNet':
         model = pointnet.PointNetSegmentation(k=len(args.cls)).to(device)
 
-    if torch.cuda.device_count() > 1:
-        model = torch.nn.DataParallel(model)
-        cudnn.benchmark = True
-
     load_checkpoint(
-        os.path.join(args.model_path, args.network),
+        args.model_path,
         args.network,
         args.epoch,
         model
     )
+
+    if torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
+        cudnn.benchmark = True
 
     test(model, test_dataloader)

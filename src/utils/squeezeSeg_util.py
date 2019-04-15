@@ -85,4 +85,5 @@ def save_checkpoint(model_dir, network, epoch, model):
 def load_checkpoint(model_dir, network, epoch, model):
     load_path = os.path.join(model_dir, f"{network.lower()}_epoch_{epoch}.pth")
     checkpoint = torch.load(load_path)
+    model.load_state_dict(checkpoint)
     print(f"Checkpoint loaded to {load_path}")

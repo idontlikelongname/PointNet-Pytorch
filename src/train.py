@@ -40,7 +40,7 @@ parser.add_argument('--lr_step', default=20, type=int, help='number of lr step')
 parser.add_argument('--lr_gamma', default=0.5, type=float, help='gamma for lr scheduler')
 
 parser.add_argument('--epochs', default=1, type=int, help='number of total epochs to run')
-parser.add_argument('--start_epochs', default=1, type=int, help='number of start epochs to run')
+parser.add_argument('--start_epoch', default=0, type=int, help='number of start epochs to run')
 
 parser.add_argument('--resume', default=False, type=bool, help='Whether or not to resume')
 
