@@ -77,13 +77,12 @@ def print_evaluate(name, value, classes):
         print(f'{classes[i]}: {value[i]}')
     print()
 
-def save_checkpoint(path, epoch, model):
-    save_path = os.path.join(path, f"model_epoch_{epoch}.pkl")
-    torch.save(model.state_dict(), save_path)
+def save_checkpoint(model_dir, network, epoch, model):
+    save_path = os.path.join(model_dir, f"{network.lower()}_epoch_{epoch}.pth")
+    torch.save(model.module.state_dict(), save_path)
     print(f"Checkpoint saved to {save_path}")
 
-def load_checkpoint(model_dir, epoch, model):
-    load_path = os.path.join(model_dir, f"model_epoch_{epoch}.pkl")
+def load_checkpoint(model_dir, network, epoch, model):
+    load_path = os.path.join(model_dir, f"{network.lower()}_epoch_{epoch}.pth")
     checkpoint = torch.load(load_path)
-    model.load_state_dict(checkpoint)
     print(f"Checkpoint loaded to {load_path}")

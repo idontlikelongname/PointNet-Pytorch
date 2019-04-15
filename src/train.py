@@ -40,8 +40,8 @@ parser.add_argument('--lr_step', default=20, type=int, help='number of lr step')
 parser.add_argument('--lr_gamma', default=0.5, type=float, help='gamma for lr scheduler')
 
 parser.add_argument('--epochs', default=1, type=int, help='number of total epochs to run')
-parser.add_argument('--start_epoch', default=0, type=int, help='number of epoch to start learning')
-parser.add_argument('--pretrain', default=False, type=bool, help='Whether or not to pretrain')
+parser.add_argument('--start_epochs', default=1, type=int, help='number of start epochs to run')
+
 parser.add_argument('--resume', default=False, type=bool, help='Whether or not to resume')
 
 parser.add_argument('--cls', default=['unkwon', 'car', 'pedestrian', 'cyclist'], nargs='+', type=str)
@@ -97,7 +97,7 @@ def train(model, train_loader, criterion, optimizer, epoch):
                 100. * batch_idx * len(inputs) / len(train_loader.dataset),
                 total_loss / total_size))
 
-        if batch_idx % 500 == 0:
+        if batch_idx == len(train_loader):
             input_img = img_normalize(inputs[0][3].view(64, 512))
             Image.fromarray(np.uint8(input_img)).save(os.path.join(args.save_path, args.network, 'Inputs/') + '{}.png'.format(epoch))
 
@@ -158,17 +158,11 @@ def test(model, val_loader, epoch):
         print()
 
 if __name__ == '__main__':
-    if os.path.exists(args.model_path) is False:
-        os.mkdir(args.model_path)
+    os.makedirs(os.path.join(args.model_path, args.network), exist_ok=True)
 
-    if os.path.exists(os.path.join(args.model_path, args.network)) is False:
-        os.mkdir(os.path.join(args.model_path, args.network))
-
-    if os.path.exists(os.path.join(args.save_path, args.network)) is False:
-        os.mkdir(os.path.join(args.save_path, args.network))
-        os.mkdir(os.path.join(args.save_path, args.network, 'Inputs'))
-        os.mkdir(os.path.join(args.save_path, args.network, 'Outputs'))
-        os.mkdir(os.path.join(args.save_path, args.network, 'Targets'))
+    os.makedirs(os.path.join(args.save_path, args.network, 'Inputs'), exist_ok=True)
+    os.makedirs(os.path.join(args.save_path, args.network, 'Outputs'), exist_ok=True)
+    os.makedirs(os.path.join(args.save_path, args.network, 'Targets'), exist_ok=True)
 
     # train data 読み込み
     train_datasets = SqueezeSegDataset(
@@ -203,13 +197,6 @@ if __name__ == '__main__':
     if args.network == 'PointNet':
         model = pointnet.PointNetSegmentation(k=len(args.cls)).to(device)
 
-    if args.resume:
-        load_checkpoint(
-            os.path.join(args.model_path, args.network),
-            args.start_epoch - 1,
-            model
-        )
-
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
@@ -229,12 +216,25 @@ if __name__ == '__main__':
         gamma = args.lr_gamma
     )
 
+    if args.resume:
+        load_checkpoint(
+            os.path.join(args.model_path, args.network),
+            args.network,
+            args.start_epoch - 1,
+            model
+        )
+
     for epoch in range(args.start_epoch, args.epochs):
         schduler.step()
         print('-----------------------------------------------------------')
         train(model, train_dataloader, criterion, optimizer, epoch)
         test(model, val_dataloader, epoch)
-        save_checkpoint(os.path.join(args.model_path, args.network), epoch, model)
+        save_checkpoint(
+            os.path.join(args.model_path, args.network),
+            args.network,
+            epoch,
+            model
+        )
         print('-----------------------------------------------------------')
         print()
 
